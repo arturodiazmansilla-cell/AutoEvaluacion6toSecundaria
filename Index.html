@@ -202,18 +202,35 @@ ev.setUint32(0,0x06054b50,true);ev.setUint16(8,archivos.length,true);ev.setUint1
 ev.setUint32(12,cz,true);ev.setUint32(16,off,true);
 return new Blob(partes.concat(central,[eo]),{type:'application/zip'})}
 function cargarImg(src){return new Promise(function(res){if(!src){res(null);return}var im=new Image();im.onload=function(){res(im)};im.onerror=function(){res(null)};im.src=src})}
-$('zip').onclick=function(){if(!CUR.length){show('No hay envíos','Todavía no hay envíos guardados en este navegador.');return}
-$('zip').disabled=true;$('st').textContent='Generando PDFs (0/'+CUR.length+')…';var archivos=[],i=0,usados={};
-function paso(){if(i>=CUR.length){fin();return}
-var r=CUR[i++];cargarImg(r.s||'').then(function(im){try{var p=makePDF(r,im,true);var nom=p.nombre,k=2;
+$('zip').onclick=function(){$('zip').disabled=true;
+/* generar y descargar el ZIP a partir de una lista de registros */
+function hacer(registros){
+if(!registros.length){$('zip').disabled=false;show('No hay envíos','No hay envíos en el Sheet ni guardados en este navegador.');return}
+$('st').textContent='Generando PDFs (0/'+registros.length+')…';var archivos=[],i=0,usados={};
+function paso(){if(i>=registros.length){fin();return}
+var r=registros[i++];cargarImg(r.s||'').then(function(im){try{var p=makePDF(r,im,true);var nom=p.nombre,k=2;
 while(usados[nom])nom=p.nombre.replace(/\.pdf$/,'')+'-'+(k++)+'.pdf';usados[nom]=1;archivos.push({nombre:nom,u:p.u})}
 catch(e){console.log('PDF '+r.n+': '+String(e))}
-$('st').textContent='Generando PDFs ('+i+'/'+CUR.length+')…';setTimeout(paso,10)})}
+$('st').textContent='Generando PDFs ('+i+'/'+registros.length+')…';setTimeout(paso,10)})}
 function fin(){$('zip').disabled=false;
 if(!archivos.length){$('st').textContent='✖ No se pudieron generar los PDFs.';return}
 dl('Autoevaluaciones_6to_3erTrimestre_'+archivos.length+'_envios.zip',zipArchivos(archivos),'application/zip');
 $('st').textContent='✔ ZIP descargado con '+archivos.length+' PDFs (uno por alumno).'}
-paso()};
+paso()}
+/* 1) leer la lista de envíos del Google Sheet */
+$('st').textContent='Leyendo envíos del Sheet…';
+jsonp('action=list',function(d,err){
+var items=(d&&d.ok&&d.items)?d.items:null;
+if(!items||!items.length){hacer(CUR);return} /* sin Sheet: usa los del navegador */
+/* 2) descargar cada registro completo (con firma) del Sheet */
+var registros=[],i=0;
+function sig(){if(i>=items.length){hacer(registros);return}
+var it=items[i++];
+$('st').textContent='Descargando del Sheet ('+i+'/'+items.length+')…';
+jsonp('action=get&row='+encodeURIComponent(it.row),function(g,e2){
+if(g&&g.ok&&g.r)registros.push(g.r);else console.log('Fila '+it.row+': '+(e2||'error'));
+setTimeout(sig,150)})}
+sig()})};
 
 /* IMPRIMIR DESDE GOOGLE SHEET */
 function modo(){$('send').hidden=LOADED;$('send2').hidden=!LOADED}
