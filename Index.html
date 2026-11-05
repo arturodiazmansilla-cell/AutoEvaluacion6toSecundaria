@@ -184,7 +184,7 @@ $('imp').onchange=function(){var f=this.files[0];if(!f)return;var fr=new FileRea
 $('delall').onclick=function(){if(!confirm('¿Borrar TODOS los envíos?\n\nSe eliminarán los datos guardados en este navegador Y todas las filas de alumnos del Google Sheet (incluidas las firmas). Esta acción no se puede deshacer.'))return;
 $('delall').disabled=true;$('st').textContent='Borrando envíos del Sheet…';
 jsonp('action=borrar',function(d,err){$('delall').disabled=false;sv(KEY,[]);renderAdm();
-if(d&&d.ok){$('st').textContent='✔ Borrado: '+(d.borradas||0)+' envíos eliminados del Sheet y del navegador.'}
+if(d&&d.ok){$('st').textContent='✔ Borrado: '+(d.borradas||0)+' envíos eliminados del Sheet y del navegador.';if(ADM)loadList()}
 else{$('st').textContent='✖ '+(d&&d.error?('Sheet: '+d.error+' (solo se borró este navegador)'):'No se pudo borrar el Sheet ('+(err||'sin conexión')+'). Solo se borró este navegador.')}})};
 /* ===== DESCARGAR TODOS LOS ENVÍOS: un PDF por alumno, comprimido en ZIP ===== */
 var CRCT=(function(){var t=[],c;for(var n=0;n<256;n++){c=n;for(var k=0;k<8;k++)c=c&1?3988292384^(c>>>1):c>>>1;t[n]=c>>>0}return t})();
