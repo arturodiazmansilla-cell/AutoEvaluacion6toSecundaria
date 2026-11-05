@@ -80,7 +80,7 @@ th,td{padding:3px 2px!important;font-size:9.5pt!important}
 <div class="tw"><table><thead><tr><th>N.º</th><th>Criterio de autoevaluación</th><th>Sí</th><th>No</th><th>Puntos</th></tr></thead><tbody id="tb"></tbody></table></div>
 <div class="tot"><b>PUNTAJE TOTAL:</b><div class="circ"><span id="tot">0</span>&nbsp;/ 5</div></div>
 <p class="ins" style="margin-top:4px">Observaciones (opcional):</p><textarea id="obs"></textarea>
-<div class="sig" id="sig"><span class="hint" style="font-size:10pt;font-weight:bold;font-style:italic">✏ Dibuja tu firma aquí con el mouse, el dedo o un lápiz digital</span><canvas id="pad" width="640" height="220"></canvas><div class="lb">Firma del estudiante</div><button id="clrsig" type="button">🧽 Borrar firma</button></div>
+<div class="sig" id="sig"><span class="hint" style="font-size:10pt;font-weight:bold;font-style:italic">✏ Dibuja tu firma aquí con el mouse, el dedo o un lápiz digital</span><canvas id="pad" width="640" height="220"></canvas><img id="sigimg" alt="Firma cargada" style="display:none;max-width:100%;border:1px solid #888;margin-top:6px"><div class="lb">Firma del estudiante</div><button id="clrsig" type="button">🧽 Borrar firma</button></div>
 <div class="sendw"><button id="send" type="button">📤 ENVIAR</button><button id="send2" type="button" hidden>📄 DESCARGAR PDF (tamaño carta)</button></div>
 </div>
 <div id="adm" hidden><h2>🔑 Panel de administrador – Arturo Diaz</h2><p class="cnt">Enviaron: <span id="cnt">0</span></p>
@@ -122,8 +122,8 @@ if(f!==null){$('r'+f).scrollIntoView({block:'center'});show('Criterios sin respo
 if(!signed&&!LOADED){$('sig').classList.add('miss');$('sig').scrollIntoView({block:'center'});show('Falta tu firma','Dibuja tu firma en el recuadro con el mouse, el dedo o un lápiz digital.');return false}
 return true}
 $('prt').onclick=function(){if(!check())return;if(LOADED){try{makePDF()}catch(e){show('No se pudo crear el PDF',String(e))}}else window.print()};
-$('clr').onclick=function(){LOADED=false;modo();$('pick').value='';$('nombre').value='';$('obs').value='';$('fecha').value=today();document.querySelectorAll('input[type=radio]').forEach(function(r){r.checked=false});clearSig();document.querySelectorAll('tr.miss').forEach(function(r){r.classList.remove('miss')});upd();$('st').textContent=''};
-var KEY='autoeval6_envios',KR='autoeval6_lista',ENDPOINT='https://script.google.com/macros/s/AKfycbwuaO8nA9CgNSK3iMzmtgbQ18mMA9blBNIygJqSM4ZbmPbhVG_Lc8_hDL9vzzqwV8jRJg/exec',ADM=false,CUR=[],LOADED=false,SKEY='';
+$('clr').onclick=function(){LOADED=false;LOADED_SIG='';$('sigimg').style.display='none';$('sigimg').src='';modo();$('pick').value='';$('nombre').value='';$('obs').value='';$('fecha').value=today();document.querySelectorAll('input[type=radio]').forEach(function(r){r.checked=false});clearSig();document.querySelectorAll('tr.miss').forEach(function(r){r.classList.remove('miss')});upd();$('st').textContent=''};
+var KEY='autoeval6_envios',KR='autoeval6_lista',ENDPOINT='https://script.google.com/macros/s/AKfycbwuaO8nA9CgNSK3iMzmtgbQ18mMA9blBNIygJqSM4ZbmPbhVG_Lc8_hDL9vzzqwV8jRJg/exec',ADM=false,CUR=[],LOADED=false,SKEY='',LOADED_SIG='';
 function ld(k,d){try{var v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}}
 function sv(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}
 function norm(s){return String(s).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/\s+/g,' ').trim()}
@@ -139,7 +139,7 @@ var h='<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:sche
 +'<table width="100%" style="border:1px solid #000"><tr style="background:#dce9f7"><th '+TD+'>N.º</th><th '+TD+'>Criterio de autoevaluación</th><th '+TD+'>Sí</th><th '+TD+'>No</th><th '+TD+'>Puntos</th></tr>'+rows+'</table>'
 +'<p align="right" style="margin-top:12pt;font-size:14pt"><b>PUNTAJE TOTAL: '+r.t+' / 5</b></p>'
 +(r.o?'<p style="margin-top:10pt"><b><i>Observaciones:</i></b></p><p>'+esc(r.o).replace(/\n/g,'<br>')+'</p>':'')
-+'<p align="center" style="margin-top:24pt"><img src="'+r.s+'" width="230" height="79"><br>______________________________<br>Firma del estudiante</p></div></body></html>';
++'<p align="center" style="margin-top:24pt"><img src="'+(LOADED_SIG||r.s)+'" width="230" height="79"><br>______________________________<br>Firma del estudiante</p></div></body></html>';
 dl('Autoevaluacion_6to_3erTrimestre_'+r.n.replace(/[^A-Za-z0-9]+/g,'_')+'.doc','\ufeff'+h,'application/msword')}
 function rec(){return{n:$('nombre').value.trim().replace(/\s+/g,' '),f:$('fecha').value,a:CR.map(function(c,i){return val(i)}),o:$('obs').value.trim(),s:pad.toDataURL('image/png'),t:upd(),at:new Date().toISOString()}}
 $('word').onclick=function(){if(!check())return;wordDoc(rec());$('st').textContent='✔ Documento Word descargado (tamaño carta).'};
@@ -153,7 +153,7 @@ $('adminbtn').onclick=function(){if(ADM){$('adm').hidden=false;$('adm').scrollIn
 $('lgcan').onclick=function(){$('lg').hidden=true};
 function login(){if(norm($('au').value)==='arturo diaz'&&$('ap').value==='Password1'){ADM=true;SKEY=$('ap').value;$('lg').hidden=true;$('ap').value='';$('lge').textContent='';$('adminbtn').textContent='🔑 Admin: Arturo Diaz';$('pk').hidden=false;loadList();$('lista').value=ld(KR,'');$('adm').hidden=false;renderAdm();$('adm').scrollIntoView()}else $('lge').textContent='Usuario o contraseña incorrectos.'}
 $('lgok').onclick=login;$('ap').onkeydown=function(e){if(e.key==='Enter')login()};
-$('admout').onclick=function(){ADM=false;SKEY='';LOADED=false;modo();$('pk').hidden=true;$('adm').hidden=true;$('adminbtn').textContent='🔑 Administrador';window.scrollTo(0,0)};
+$('admout').onclick=function(){ADM=false;SKEY='';LOADED=false;LOADED_SIG='';$('sigimg').style.display='none';$('sigimg').src='';modo();$('pk').hidden=true;$('adm').hidden=true;$('adminbtn').textContent='🔑 Administrador';window.scrollTo(0,0)};
 function renderAdm(){CUR=ld(KEY,[]).sort(function(a,b){return norm(a.n)<norm(b.n)?-1:1});var ks={};
 $('cnt').textContent=CUR.length;
 $('rows').innerHTML=CUR.length?CUR.map(function(r,i){ks[nkey(r.n)]=1;return '<tr><td>'+(i+1)+'</td><td>'+esc(r.n)+'</td><td>'+fdate(r.f)+'</td><td><b>'+r.t+' / 5</b></td><td>'+new Date(r.at).toLocaleString('es')+'</td><td><button data-a="sig" data-i="'+i+'">✍ Firma</button> <button data-a="doc" data-i="'+i+'">Word</button> <button data-a="del" data-i="'+i+'">🗑</button></td></tr>'}).join(''):'<tr><td colspan="6">Aún no hay envíos.</td></tr>';
@@ -224,7 +224,7 @@ var lb='PUNTAJE TOTAL:';txt(lb,M+CW-84-10-tw(lb,10,'b'),by+23,10,'b');
 y=by+58;txt('Observaciones (opcional):',M,y,10,'i');y+=6;rect(M,y,CW,70,null,1);
 var oy=y+15;wrap(r.o||'',10.5,'n',CW-12).slice(0,4).forEach(function(l){txt(l,M+6,oy,10.5,'n');oy+=13});
 /* firma */
-y+=70+22;if(signed)img(pad,pad.width,pad.height,(W-230)/2,y,230,79);
+y+=70+22;if(signed){img(pad,pad.width,pad.height,(W-230)/2,y,230,79)}else{var sg=$('sigimg');if(sg&&sg.naturalWidth){try{img(sg,sg.naturalWidth,sg.naturalHeight,(W-230)/2,y,230,79)}catch(e){}}}
 line((W-230)/2,y+82,(W+230)/2,y+82,1.2);ctr('Firma del estudiante',0,W,y+95,10,'n');
 /* ensamblar PDF */
 var e8=function(s){var u=new Uint8Array(s.length);for(var i=0;i<s.length;i++)u[i]=s.charCodeAt(i)&255;return u};
@@ -264,8 +264,8 @@ $('nombre').value=r.n||'';if(r.f)$('fecha').value=r.f;
 document.querySelectorAll('input[type=radio]').forEach(function(x){x.checked=false});
 CR.forEach(function(c,i){var v=r.a&&r.a[i];if(v===0||v===1){var el=document.querySelector('input[name=q'+i+'][value="'+v+'"]');if(el)el.checked=true}});
 document.querySelectorAll('tr.miss').forEach(function(x){x.classList.remove('miss')});
-$('obs').value=r.o||'';upd();clearSig();LOADED=true;modo();
-if(r.s){var im=new Image();im.onload=function(){cx.clearRect(0,0,pad.width,pad.height);var k=Math.min(pad.width/im.width,pad.height/im.height),w=im.width*k,h=im.height*k;cx.drawImage(im,(pad.width-w)/2,(pad.height-h)/2,w,h);signed=true};im.src=r.s}
+$('obs').value=r.o||'';upd();clearSig();LOADED=true;modo();LOADED_SIG=r.s||'';$('sigimg').style.display='none';$('sigimg').src='';
+if(r.s){$('st').textContent='Cargando firma de '+r.n+'…';var im=new Image();im.onload=function(){cx.clearRect(0,0,pad.width,pad.height);var k=Math.min(pad.width/im.width,pad.height/im.height),w=im.width*k,h=im.height*k;cx.drawImage(im,(pad.width-w)/2,(pad.height-h)/2,w,h);signed=true;$('sigimg').src=r.s;$('sigimg').style.display='block';$('st').textContent='✔ Cargado: '+r.n+'. Firma cargada. Pulsa 📄 DESCARGAR PDF.'};im.onerror=function(){$('st').textContent='✖ Firma no se pudo cargar desde la hoja (error al abrir la imagen). Se muestra abajo si el navegador la abre.';$('sigimg').src=r.s;$('sigimg').style.display='block'};im.src=r.s;setTimeout(function(){if(LOADED&&!signed){$('st').textContent='✖ La firma tardó demasiado en cargar desde la hoja. Revisa la imagen de abajo.'}},5000)}else{$('st').textContent='✔ Cargado: '+r.n+'. Este registro no trae firma en la hoja.'}
 window.scrollTo(0,0)}
 $('pick').onchange=function(){var row=this.value;if(!row)return;$('st').textContent='Cargando registro…';
 jsonp('action=get&row='+encodeURIComponent(row),function(d,err){
