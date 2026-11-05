@@ -181,7 +181,11 @@ var L=[['Nombre completo','Fecha'].concat(CR,['Total /5','Enviado el'])].concat(
 dl('Reporte_envios_autoevaluacion_6to.csv','\ufeff'+L.map(function(x){return x.map(q).join(';')}).join('\r\n'),'text/csv')};
 $('bk').onclick=function(){dl('envios_autoevaluacion_6to.json',JSON.stringify(ld(KEY,[])),'application/json')};
 $('imp').onchange=function(){var f=this.files[0];if(!f)return;var fr=new FileReader();fr.onload=function(){try{var A=JSON.parse(fr.result),m={};ld(KEY,[]).concat(A).forEach(function(r){var k=nkey(r.n);if(!m[k]||m[k].at<r.at)m[k]=r});sv(KEY,Object.keys(m).map(function(k){return m[k]}));renderAdm()}catch(e){alert('Archivo no válido.')}};fr.readAsText(f);this.value=''};
-$('delall').onclick=function(){if(confirm('¿Borrar TODOS los envíos guardados en este navegador?')){sv(KEY,[]);renderAdm()}};
+$('delall').onclick=function(){if(!confirm('¿Borrar TODOS los envíos?\n\nSe eliminarán los datos guardados en este navegador Y todas las filas de alumnos del Google Sheet (incluidas las firmas). Esta acción no se puede deshacer.'))return;
+$('delall').disabled=true;$('st').textContent='Borrando envíos del Sheet…';
+jsonp('action=borrar',function(d,err){$('delall').disabled=false;sv(KEY,[]);renderAdm();
+if(d&&d.ok){$('st').textContent='✔ Borrado: '+(d.borradas||0)+' envíos eliminados del Sheet y del navegador.'}
+else{$('st').textContent='✖ '+(d&&d.error?('Sheet: '+d.error+' (solo se borró este navegador)'):'No se pudo borrar el Sheet ('+(err||'sin conexión')+'). Solo se borró este navegador.')}})};
 /* ===== DESCARGAR TODOS LOS ENVÍOS: un PDF por alumno, comprimido en ZIP ===== */
 var CRCT=(function(){var t=[],c;for(var n=0;n<256;n++){c=n;for(var k=0;k<8;k++)c=c&1?3988292384^(c>>>1):c>>>1;t[n]=c>>>0}return t})();
 function crc32(u){var c=4294967295;for(var i=0;i<u.length;i++)c=CRCT[(c^u[i])&255]^(c>>>8);return (c^4294967295)>>>0}
