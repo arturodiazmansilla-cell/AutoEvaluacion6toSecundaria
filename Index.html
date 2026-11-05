@@ -59,7 +59,7 @@ var CR=["Cumplo con mis tareas","Llego puntual a clase","Respeto a mis compañer
 var $=function(i){return document.getElementById(i)};
 var tb=$('tb');
 var pad=$('pad'),cx=pad.getContext('2d'),drw=false,signed=false;
-cx.lineWidth=3.5;cx.lineCap='round';cx.lineJoin='round';cx.strokeStyle='#000';
+cx.lineWidth=6;cx.lineCap='round';cx.lineJoin='round';cx.strokeStyle='#000';
 function pt(e){var r=pad.getBoundingClientRect();return[(e.clientX-r.left)*pad.width/r.width,(e.clientY-r.top)*pad.height/r.height]}
 pad.addEventListener('pointerdown',function(e){e.preventDefault();drw=true;try{pad.setPointerCapture(e.pointerId)}catch(_){}var p=pt(e);cx.beginPath();cx.moveTo(p[0],p[1]);cx.lineTo(p[0]+.1,p[1]+.1);cx.stroke();signed=true;$('sig').classList.remove('miss')});
 pad.addEventListener('pointermove',function(e){if(!drw)return;e.preventDefault();var p=pt(e);cx.lineTo(p[0],p[1]);cx.stroke()});
