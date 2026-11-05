@@ -143,11 +143,22 @@ var h='<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:sche
 dl('Autoevaluacion_6to_3erTrimestre_'+r.n.replace(/[^A-Za-z0-9]+/g,'_')+'.doc','\ufeff'+h,'application/msword')}
 function rec(){return{n:$('nombre').value.trim().replace(/\s+/g,' '),f:$('fecha').value,a:CR.map(function(c,i){return val(i)}),o:$('obs').value.trim(),s:pad.toDataURL('image/png'),t:upd(),at:new Date().toISOString()}}
 $('word').onclick=function(){if(!check())return;wordDoc(rec());$('st').textContent='✔ Documento Word descargado (tamaño carta).'};
-$('send').onclick=function(){if(LOADED){show('Solo para imprimir','Este registro fue cargado desde el Sheet. Usa 🧹 Limpiar para llenar un formulario nuevo.');return}if(!check())return;var r=rec(),L=ld(KEY,[]),k=nkey(r.n),re=false;
+/* Pregunta al Sheet (vía JSONP) si este alumno ya envió su Auto-Evaluación */
+function yaEnvio(n,cb){var done=false,cbn='cbYa'+Date.now()+Math.floor(Math.random()*100000);
+function fin(j){if(done)return;done=true;try{delete window[cbn]}catch(e){window[cbn]=null}cb(j)}
+var tm=setTimeout(function(){fin(null)},9000);
+window[cbn]=function(j){clearTimeout(tm);fin(j)};
+var s=document.createElement('script');s.src=ENDPOINT+'?action=check&nombre='+encodeURIComponent(n)+'&callback='+cbn;
+s.onerror=function(){clearTimeout(tm);fin(null)};document.head.appendChild(s)}
+$('send').onclick=function(){if(LOADED){show('Solo para imprimir','Este registro fue cargado desde el Sheet. Usa 🧹 Limpiar para llenar un formulario nuevo.');return}if(!check())return;var r=rec();
+$('st').textContent='Enviando…';
+yaEnvio(r.n,function(j){$('st').textContent='';
+if(j&&j.duplicado){show('Auto-Evaluación ya enviada',r.n+': tu Auto-Evaluación ya fue enviada'+(j.fecha?' el '+j.fecha:'')+'. No es necesario enviarla otra vez.');return}
+var L=ld(KEY,[]),k=nkey(r.n),re=false;
 L=L.filter(function(x){if(nkey(x.n)===k){re=true;return false}return true});L.push(r);
 if(!sv(KEY,L)){show('No se pudo enviar','El navegador bloqueó el almacenamiento. Exporta a Word como respaldo.');return}
 if(ENDPOINT){try{fetch(ENDPOINT,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain'},body:JSON.stringify(r)})}catch(e){}}
-$('clr').click();show('✔ Envío registrado',r.n+' – Puntaje '+r.t+' / 5'+(re?' (se actualizó tu envío anterior)':''));if(ADM)renderAdm()};
+$('clr').click();show('✔ Envío registrado',r.n+' – Puntaje '+r.t+' / 5'+(re?' (se actualizó tu envío anterior)':''));if(ADM)renderAdm()})};
 /* ADMIN */
 $('adminbtn').onclick=function(){if(ADM){$('adm').hidden=false;$('adm').scrollIntoView();return}$('lg').hidden=false;$('au').focus()};
 $('lgcan').onclick=function(){$('lg').hidden=true};
