@@ -150,15 +150,25 @@ var tm=setTimeout(function(){fin(null)},9000);
 window[cbn]=function(j){clearTimeout(tm);fin(j)};
 var s=document.createElement('script');s.src=ENDPOINT+'?action=check&nombre='+encodeURIComponent(n)+'&callback='+cbn;
 s.onerror=function(){clearTimeout(tm);fin(null)};document.head.appendChild(s)}
-$('send').onclick=function(){if(LOADED){show('Solo para imprimir','Este registro fue cargado desde el Sheet. Usa 🧹 Limpiar para llenar un formulario nuevo.');return}if(!check())return;var r=rec();
-$('st').textContent='Enviando…';
+/* Anti-duplicados: bloquea el botón mientras se envía y recuerda 60 s lo recién enviado */
+var ENVIANDO=false,ENVIADOS={};
+function lockSend(on){ENVIANDO=on;var b=$('send');b.disabled=on;b.textContent=on?'⏳ Enviando…':'📤 ENVIAR'}
+$('send').onclick=function(){if(ENVIANDO)return;
+if(LOADED){show('Solo para imprimir','Este registro fue cargado desde el Sheet. Usa 🧹 Limpiar para llenar un formulario nuevo.');return}
+if(!check())return;var r=rec(),k=nkey(r.n);
+if(ENVIADOS[k]&&Date.now()-ENVIADOS[k]<60000){show('Auto-Evaluación ya enviada',r.n+': tu Auto-Evaluación se acaba de enviar. No es necesario enviarla otra vez.');return}
+lockSend(true);$('st').textContent='Enviando…';
 yaEnvio(r.n,function(j){$('st').textContent='';
+try{
 if(j&&j.duplicado){show('Auto-Evaluación ya enviada',r.n+': tu Auto-Evaluación ya fue enviada'+(j.fecha?' el '+j.fecha:'')+'. No es necesario enviarla otra vez.');return}
-var L=ld(KEY,[]),k=nkey(r.n),re=false;
+var L=ld(KEY,[]),re=false;
 L=L.filter(function(x){if(nkey(x.n)===k){re=true;return false}return true});L.push(r);
 if(!sv(KEY,L)){show('No se pudo enviar','El navegador bloqueó el almacenamiento. Exporta a Word como respaldo.');return}
+ENVIADOS[k]=Date.now();
 if(ENDPOINT){try{fetch(ENDPOINT,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain'},body:JSON.stringify(r)})}catch(e){}}
-$('clr').click();show('✔ Envío registrado',r.n+' – Puntaje '+r.t+' / 5'+(re?' (se actualizó tu envío anterior)':''));if(ADM)renderAdm()})};
+$('clr').click();show('✔ Envío registrado',r.n+' – Puntaje '+r.t+' / 5'+(re?' (se actualizó tu envío anterior)':''));if(ADM)renderAdm()
+}catch(err){show('No se pudo enviar',String(err))}
+finally{lockSend(false)}})};
 /* ADMIN */
 $('adminbtn').onclick=function(){if(ADM){$('adm').hidden=false;$('adm').scrollIntoView();return}$('lg').hidden=false;$('au').focus()};
 $('lgcan').onclick=function(){$('lg').hidden=true};
